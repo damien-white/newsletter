@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "zero2prod"
+name = "newsletter"
 version = "0.1.0"
