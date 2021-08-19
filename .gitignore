@@ -19,10 +19,8 @@ target/
 # Direnv tool
 .envrc
 
-# Shell scripts
-dev.sh
-start.sh
-watch.sh
+# Dev scripts
+scripts/
 
 ## Workspace Directory and Files
 # JetBrains IDE
