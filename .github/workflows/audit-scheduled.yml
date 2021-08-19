@@ -1,10 +1,6 @@
-name: Security audit
+name: Security audit - Scheduled
 
 on:
-  push:
-    paths:
-      - '**/Cargo.toml'
-      - '**/Cargo.lock'
   schedule:
     - cron: '0 0 * * *'
 
