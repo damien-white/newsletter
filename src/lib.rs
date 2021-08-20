@@ -1,14 +1,16 @@
 //! lib.rs Holds the core logic of the application.
 
+use actix_web::dev::Server;
 use actix_web::{web, App, HttpResponse, HttpServer};
 
-pub async fn run() -> std::io::Result<()> {
+pub fn run() -> Result<Server, std::io::Error> {
     println!("Starting service. Available at: http://127.0.0.1:8000");
 
-    HttpServer::new(|| App::new().route("/health", web::get().to(health)))
+    let server = HttpServer::new(|| App::new().route("/health", web::get().to(health)))
         .bind("127.0.0.1:8000")?
-        .run()
-        .await
+        .run();
+
+    Ok(server)
 }
 
 /// The `health` endpoint is useful for testing, inspection and monitoring.
