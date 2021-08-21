@@ -1,9 +1,18 @@
 //! tests/health.rs
 
+use std::net::TcpListener;
+
 // Launch application in the background using `tokio::spawn`
-fn start_server() {
-    let server = newsletter::run().expect("Server address binding failed");
+fn spawn_server() -> String {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("Server failed to bind to random port");
+
+    // Get the port that the spawned server is bound to
+    let port = listener.local_addr().unwrap().port();
+    let server = newsletter::run(listener).expect("Server address binding failed");
     let _ = tokio::spawn(server);
+
+    // Return the application address
+    format!("http://127.0.0.1:{}", port)
 }
 
 /// Note: `actix_rt::test` is the testing equivalent of `actix_web::main`
@@ -20,15 +29,15 @@ fn start_server() {
 #[actix_rt::test]
 async fn health_endpoint_returns_correct_response() {
     // Arrange
-    start_server();
+    let address = spawn_server();
     let client = reqwest::Client::new();
 
     // Act
     let response = client
-        .get("http://127.0.0.1:8000/health")
+        .get(&format!("{}/health", &address))
         .send()
         .await
-        .expect("No response. HTTP request failed.");
+        .expect("HTTP request failed; no response from server");
 
     // Assert
     assert!(response.status().is_success());
