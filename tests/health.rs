@@ -15,19 +15,8 @@ fn spawn_server() -> String {
     format!("http://127.0.0.1:{}", port)
 }
 
-/// Note: `actix_rt::test` is the testing equivalent of `actix_web::main`
-/// It spares one from having to specify the `#[test]` attribute.
-/// We add `actix-rs` and `reqwest` under `[dev-dependencies]` in order to
-/// be able to conduct black-box testing.
-///
-/// NOTE: the code generated can be inspected using
-/// `cargo expand --test health`
-/// We are using the `arrange — act — assert` testing pattern.
-///
-/// For a more detailed explanation of the pattern, please refer to this blog
-/// article on [Automation Panda](https://automationpanda.com/2020/07/07/arrange-act-assert-a-pattern-for-writing-good-tests/)
 #[actix_rt::test]
-async fn health_endpoint_returns_correct_response() {
+async fn health_check_succeeds() {
     // Arrange
     let address = spawn_server();
     let client = reqwest::Client::new();
@@ -37,9 +26,60 @@ async fn health_endpoint_returns_correct_response() {
         .get(&format!("{}/health", &address))
         .send()
         .await
-        .expect("HTTP request failed; no response from server");
+        .expect("HTTP client request failed");
 
     // Assert
     assert!(response.status().is_success());
     assert_eq!(response.content_length(), Some(0));
+}
+
+#[actix_rt::test]
+async fn subscribe_returns_success_if_form_valid() {
+    // Arrange
+    let address = spawn_server();
+    let client = reqwest::Client::new();
+    let body = "name=Peter%20Donovan&email=peter.donovan@gmail.com";
+
+    // Act
+    let response = client
+        .post(&format!("{}/subscriptions", &address))
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(body)
+        .send()
+        .await
+        .expect("HTTP client request failed");
+
+    // Assert
+    assert_eq!(response.status().as_u16(), 200);
+}
+
+#[actix_rt::test]
+async fn subscribe_returns_bad_request_if_form_invalid() {
+    // Arrange
+    let address = spawn_server();
+    let client = reqwest::Client::new();
+    let test_cases = vec![
+        ("name=Peter%20Donovan", "missing email field"),
+        ("email=peter.donovan@gmail.com", "missing name field"),
+        ("", "missing name and email fields"),
+    ];
+
+    // Act
+    for (body, err_message) in test_cases {
+        let response = client
+            .post(&format!("{}/subscriptions", &address))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(body)
+            .send()
+            .await
+            .expect("HTTP client request failed");
+
+        // Assert
+        assert_eq!(
+            response.status().as_u16(),
+            400,
+            "The server did not respond with a '400 Bad Request' when {}",
+            err_message
+        );
+    }
 }

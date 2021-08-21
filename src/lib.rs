@@ -8,7 +8,7 @@ use actix_web::{web, App, HttpResponse, HttpServer};
 pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
     println!(
         "Starting service. Available at: http://{}",
-        &listener.local_addr()?
+        listener.local_addr()?
     );
 
     let server = HttpServer::new(|| App::new().route("/health", web::get().to(health)))
