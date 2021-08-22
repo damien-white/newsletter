@@ -11,9 +11,13 @@ pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
         listener.local_addr()?
     );
 
-    let server = HttpServer::new(|| App::new().route("/health", web::get().to(health)))
-        .listen(listener)?
-        .run();
+    let server = HttpServer::new(|| {
+        App::new()
+            .route("/health", web::get().to(health))
+            .route("/subscribe", web::post().to(subscribe))
+    })
+    .listen(listener)?
+    .run();
 
     Ok(server)
 }
@@ -21,5 +25,11 @@ pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
 /// The `health` endpoint is useful for testing, inspection and monitoring.
 /// It returns a "200 OK" response to indicate that the service is running.
 async fn health() -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+
+/// The `subscribe` endpoint handles POST requests generated from submitted
+/// HTML forms containing user data.
+async fn subscribe() -> HttpResponse {
     HttpResponse::Ok().finish()
 }

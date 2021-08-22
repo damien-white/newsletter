@@ -1,3 +1,6 @@
+# Load environment variables
+set dotenv-load := true
+
 # Run server in watch mode
 run-watch:
     cargo watch -x run

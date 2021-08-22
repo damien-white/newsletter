@@ -1,11 +1,11 @@
-name: Security audit - Scheduled
+name: Security Audit - Scheduled
 
 on:
   schedule:
     - cron: '0 0 * * *'
 
 jobs:
-  audit:
+  security_audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
