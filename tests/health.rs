@@ -42,7 +42,7 @@ async fn subscribe_returns_success_if_form_valid() {
 
     // Act
     let response = client
-        .post(&format!("{}/subscriptions", &address))
+        .post(&format!("{}/subscribe", &address))
         .header("Content-Type", "application/x-www-form-urlencoded")
         .body(body)
         .send()
@@ -67,7 +67,7 @@ async fn subscribe_returns_bad_request_if_form_invalid() {
     // Act
     for (body, err_message) in test_cases {
         let response = client
-            .post(&format!("{}/subscriptions", &address))
+            .post(&format!("{}/subscribe", &address))
             .header("Content-Type", "application/x-www-form-urlencoded")
             .body(body)
             .send()

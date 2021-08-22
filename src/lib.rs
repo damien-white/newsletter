@@ -4,6 +4,7 @@ use std::net::TcpListener;
 
 use actix_web::dev::Server;
 use actix_web::{web, App, HttpResponse, HttpServer};
+use serde::Deserialize;
 
 pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
     println!(
@@ -28,8 +29,14 @@ async fn health() -> HttpResponse {
     HttpResponse::Ok().finish()
 }
 
+#[derive(Deserialize)]
+struct SubscribeForm {
+    name: String,
+    email: String,
+}
+
 /// The `subscribe` endpoint handles POST requests generated from submitted
 /// HTML forms containing user data.
-async fn subscribe() -> HttpResponse {
+async fn subscribe(_form: web::Form<SubscribeForm>) -> HttpResponse {
     HttpResponse::Ok().finish()
 }
