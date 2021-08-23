@@ -19,9 +19,6 @@ target/
 # Direnv tool
 .envrc
 
-# Dev scripts
-scripts/
-
 ## Workspace Directory and Files
 # JetBrains IDE
 .idea
