@@ -1,5 +1,4 @@
-//! tests/health.rs
-
+/// Integration tests for the `/health` endpoint
 use std::net::TcpListener;
 
 // Launch application in the background using `tokio::spawn`
@@ -8,7 +7,7 @@ fn spawn_server() -> String {
 
     // Get the port that the spawned server is bound to
     let port = listener.local_addr().unwrap().port();
-    let server = newsletter::run(listener).expect("Server address binding failed");
+    let server = newsletter::server::start(listener).expect("Server address binding failed");
     let _ = tokio::spawn(server);
 
     // Return the application address
