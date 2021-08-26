@@ -16,7 +16,7 @@ fn spawn_server() -> String {
 }
 
 #[actix_rt::test]
-async fn health_check_succeeds() {
+async fn health_check_returns_correct_response() {
     // Arrange
     let address = spawn_server();
     let client = reqwest::Client::new();
