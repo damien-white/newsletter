@@ -1,0 +1,11 @@
+# Default configuration
+app:
+  host: "127.0.0.1"
+  port: 8120
+database:
+  username: "postgres"
+  password: "3MxJOmiMVnNMfsWiQIVFkeVftygSO0HC"
+  host: "localhost"
+  port: 5432
+  name: "newsletter"
+
