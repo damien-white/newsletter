@@ -13,9 +13,22 @@ pub struct AppSettings {
 pub struct DatabaseSettings {
     pub username: String,
     pub password: String,
-    pub port: u16,
     pub host: String,
+    pub port: u16,
     pub name: String,
+}
+
+impl DatabaseSettings {
+    pub fn build_url(&self) -> String {
+        if let Ok(url) = std::env::var("DATABASE_URL") {
+            url
+        } else {
+            format!(
+                "postgres://{}:{}@{}:{}/{}",
+                self.username, self.password, self.host, self.port, self.name
+            )
+        }
+    }
 }
 
 #[derive(Deserialize)]

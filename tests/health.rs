@@ -1,3 +1,5 @@
+use newsletter::settings::Settings;
+use sqlx::{Connection, PgConnection};
 /// Integration tests for the `/health` endpoint
 use std::net::TcpListener;
 
@@ -36,6 +38,12 @@ async fn health_check_returns_correct_response() {
 async fn subscribe_returns_success_if_form_valid() {
     // Arrange
     let address = spawn_server();
+    let config = Settings::load().expect("Failed to load configuration settings.");
+    let datbase_url = config.database.build_url();
+    let connection = PgConnection::connect(&datbase_url)
+        .await
+        .expect("Failed to connect to PostgreSQL.");
+
     let client = reqwest::Client::new();
     let body = "name=Peter%20Donovan&email=peter.donovan@gmail.com";
 

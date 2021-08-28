@@ -12,7 +12,7 @@ use newsletter::settings::Settings;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // Load settings from configuration source(s). Panic on failure.
-    let settings = Settings::load().expect("Failed to load settings from config source.");
+    let settings = Settings::load().expect("Failed to load configuration settings.");
 
     let addr = &format!("127.0.0.1:{}", settings.app.port);
     let listener = TcpListener::bind(addr)?;
