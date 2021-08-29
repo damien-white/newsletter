@@ -1,7 +1,9 @@
-use newsletter::settings::Settings;
-use sqlx::{Connection, PgConnection};
 /// Integration tests for the `/health` endpoint
 use std::net::TcpListener;
+
+use sqlx::{query, Connection, PgConnection};
+
+use newsletter::settings::Settings;
 
 // Launch application in the background using `tokio::spawn`
 fn spawn_server() -> String {
@@ -39,8 +41,8 @@ async fn subscribe_returns_success_if_form_valid() {
     // Arrange
     let address = spawn_server();
     let config = Settings::load().expect("Failed to load configuration settings.");
-    let datbase_url = config.database.build_url();
-    let connection = PgConnection::connect(&datbase_url)
+    let database_url = config.database.build_url();
+    let mut connection = PgConnection::connect(&database_url)
         .await
         .expect("Failed to connect to PostgreSQL.");
 
@@ -58,6 +60,14 @@ async fn subscribe_returns_success_if_form_valid() {
 
     // Assert
     assert_eq!(response.status().as_u16(), 200);
+
+    let saved = query!("SELECT email, name FROM subscriptions")
+        .fetch_one(&mut connection)
+        .await
+        .expect("Failed to fetch saved subscription.");
+
+    assert_eq!(saved.name, "Peter Donovan");
+    assert_eq!(saved.email, "peter.donovan@gmail.com");
 }
 
 #[actix_rt::test]
