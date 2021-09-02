@@ -1,19 +1,15 @@
 #!/usr/bin/env bash
 
-# Script for initializing the database using Docker and the SQLx CLI
-
 set -x
 set -eo pipefail
 
-# Check that required executables are installed (psql, sqlx)
 if ! [ -x "$(command -v psql)" ]; then
   echo >&2 "[-] Error: 'psql' must be installed."
   exit 1
 fi
 
 if ! [ -x "$(command -v sqlx)" ]; then
-  echo >&2 "[-] Error: 'sqlx-cli' must be installed."
-  echo >&2 "    To install the SQLx CLI using cargo, run:"
+  echo >&2 "[-] Error: 'sqlx-cli' must be installed. To install with cargo, use:"
   echo >&2 "    cargo install sqlx-cli --no-default-features --features postgres"
   exit 1
 fi
@@ -33,23 +29,35 @@ if [[ -z "${SKIP_DOCKER}" ]]; then
     -e POSTGRES_PASSWORD=${DB_PASSWORD} \
     -e POSTGRES_DB=${DB_NAME} \
     -p "${DB_PORT}:5432" \
-    -d postgres \
+    -d postgres:13.4 \
     postgres -N ${DB_MAX_CONNECTIONS}
 fi
 
-export PGPASSWORD="${DB_PASSWORD}"
-# Ping PostgreSQL service until it is ready to accept commands
-until psql -h "localhost" -U "${DB_USER}" -p "${DB_PORT}" -d "${DB_NAME}" -c '\q'; do
-  echo >&2 "[-] PostgreSQL service unavailable. Retrying..."
-  sleep 1
-done
-
-echo >&2 "[*] PostgreSQL service running on port ${DB_PORT}. Executing migrations..."
-
 # 'DATABASE_URL' must be set for SQLx to work properly, so we explicitly set it
 export DATABASE_URL="postgres://${DB_USER}:${DB_PASSWORD}@localhost:${DB_PORT}/${DB_NAME}"
-# Create database and then run existing migrations with SQLx CLI
+
+# Helper function that waits until PostgreSQL is up and ready to accept commands
+function wait_for_postgres() {
+  # Number of connection attempts made
+  local attempt_count=1
+  # Delay between connection attempts to implement a simple backoff strategy
+  local delay=1
+
+  # Ping PostgreSQL service until it is ready to accept commands
+  until psql "${DATABASE_URL}" --command '\q'; do
+    ((attempt_count = attempt_count + 1))
+    ((delay = delay + 1))
+    echo >&2 "[»] Cannot reach PostgreSQL service. Retrying in ${delay} seconds..."
+    sleep $delay
+  done
+}
+
+# Run `wait_for_postgres` function
+wait_for_postgres
+
+echo >&2 "[*] PostgreSQL service started successfully. Executing migrations..."
+# Create database and run any pending migrations with `sqlx-cli`
 sqlx database create
 sqlx migrate run
 
-echo >&2 "[*] PostgreSQL database migrations successful."
+echo >&2 "[*] Database migrations complete."

@@ -4,8 +4,8 @@ app:
   port: 8120
 database:
   username: "postgres"
-  password: "3MxJOmiMVnNMfsWiQIVFkeVftygSO0HC"
+  password: "password"
   host: "localhost"
   port: 5432
-  name: "newsletter"
+  dbname: "newsletter"
 

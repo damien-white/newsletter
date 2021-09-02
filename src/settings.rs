@@ -1,5 +1,4 @@
 //! Manages the configuration for the service.
-
 use config::{Config, ConfigError};
 use serde::Deserialize;
 
@@ -15,19 +14,24 @@ pub struct DatabaseSettings {
     pub password: String,
     pub host: String,
     pub port: u16,
-    pub name: String,
+    pub dbname: String,
 }
 
 impl DatabaseSettings {
-    pub fn build_url(&self) -> String {
-        if let Ok(url) = std::env::var("DATABASE_URL") {
-            url
-        } else {
-            format!(
-                "postgres://{}:{}@{}:{}/{}",
-                self.username, self.password, self.host, self.port, self.name
-            )
-        }
+    /// Sets the `url` of the database using the `DATABASE_URL` environment
+    /// variable, falling back to the `.yaml` configuration file if not found.
+    pub fn url(&self) -> String {
+        format!(
+            "postgres://{}:{}@{}:{}/{}",
+            self.username, self.password, self.host, self.port, self.dbname
+        )
+    }
+
+    pub fn test_url(&self) -> String {
+        format!(
+            "postgres://{}:{}@{}:{}/",
+            self.username, self.password, self.host, self.port
+        )
     }
 }
 

@@ -1,16 +1,19 @@
 //! The server module bootstraps the application and starts the service
-//! using the user-supplied settings, or configuration.
+//! using the user-supplied configuration settings.
 
 use std::net::TcpListener;
 
 use actix_web::dev::Server;
 use actix_web::{web, App, HttpServer};
+use sqlx::PgPool;
 
 use crate::handlers::{health, subscribe};
 
-pub fn start(listener: TcpListener) -> Result<Server, std::io::Error> {
-    let server = HttpServer::new(|| {
+pub fn start(listener: TcpListener, pool: PgPool) -> Result<Server, std::io::Error> {
+    let pool = web::Data::new(pool);
+    let server = HttpServer::new(move || {
         App::new()
+            .app_data(pool.clone())
             .route("/health", web::get().to(health))
             .route("/subscribe", web::post().to(subscribe))
     })
