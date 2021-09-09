@@ -1,0 +1,22 @@
+name: Security Audit # Audit project dependencies on push and on schedule
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  security_audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v1
+      - name: Audit dependencies
+        uses: actions-rs/audit-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
