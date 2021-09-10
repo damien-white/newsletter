@@ -16,18 +16,30 @@ path = "src/main.rs"
 name = "newsletter"
 
 [dependencies]
-# Note: actix dependencies are beta versions so pinned for compatibility
-actix-http = "=3.0.0-beta.9"
-actix-web = "=4.0.0-beta.8"
-config = { version = "0.11", default-features = false, features = ["yaml"] }
+actix-http = "=3.0.0-beta.10"
+actix-web = "=4.0.0-beta.9"
 chrono = "0.4"
+env_logger = "0.9"
 serde = { version = "1.0", features = ["derive"] }
 uuid = { version = "0.8", features = ["v4"] }
+tracing = { version = "0.1", features = ["log"] }
+tracing-futures = "0.2"
+tracing-bunyan-formatter = "0.2"
+
+[dependencies.config]
+version = "0.11"
+default-features = false
+features = ["toml", "yaml"]
 
 [dependencies.sqlx]
 version = "0.5"
 default-features = false
 features = ["chrono", "macros", "migrate", "postgres", "runtime-actix-rustls", "uuid"]
+
+[dependencies.tracing-subscriber]
+version = "0.2"
+default-features = false
+features = ["env-filter", "registry"]
 
 [dev-dependencies]
 actix-rt = "2"
