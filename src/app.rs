@@ -4,13 +4,11 @@
 use std::net::TcpListener;
 
 use actix_web::{dev::Server, middleware, web, App, HttpServer};
-use env_logger::Env;
 use sqlx::PgPool;
 
 use crate::handlers::{health, subscribe};
 
 pub fn start(listener: TcpListener, pool: PgPool) -> Result<Server, std::io::Error> {
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
     let pool = web::Data::new(pool);
     let server = HttpServer::new(move || {
         App::new()

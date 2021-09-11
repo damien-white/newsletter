@@ -8,11 +8,17 @@ use std::net::TcpListener;
 
 use sqlx::PgPool;
 
-use newsletter::app::start;
-use newsletter::settings::Settings;
+use newsletter::{
+    app::start,
+    settings::Settings,
+    telemetry::{init_tracing, register_subscriber},
+};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    let subscriber = register_subscriber("newsletter", "info");
+    init_tracing(subscriber);
+
     // Load settings from configuration source(s). Panic on failure.
     let settings = Settings::load().expect("Failed to load configuration settings.");
 
