@@ -37,7 +37,7 @@ features = ["toml"]
 [dependencies.sqlx]
 version = "0.5"
 default-features = false
-features = ["chrono", "macros", "migrate", "postgres", "runtime-actix-rustls", "uuid"]
+features = ["chrono", "macros", "migrate", "offline", "postgres", "runtime-actix-rustls", "uuid"]
 
 [dev-dependencies]
 actix-rt = "2"

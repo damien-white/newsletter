@@ -52,7 +52,7 @@ pub async fn setup_test_db(database: &DatabaseSettings) -> PgPool {
         .expect("Failed to connect to PostgreSQL.");
 
     connection
-        .execute(&*format!("CREATE DATABASE \"{}\";", database.dbname))
+        .execute(format!("CREATE DATABASE \"{}\";", database.dbname).as_str())
         .await
         .expect("Failed to create database instance.");
 
@@ -88,7 +88,7 @@ async fn health_check_returns_correct_response() {
 }
 
 #[actix_rt::test]
-async fn subscribe_returns_success_if_form_valid() {
+async fn subscribe_returns_201_when_form_valid() {
     // Arrange
     let server = spawn_server().await;
     let pool = server.pool.clone();
@@ -117,7 +117,7 @@ async fn subscribe_returns_success_if_form_valid() {
 }
 
 #[actix_rt::test]
-async fn subscribe_returns_bad_request_if_form_invalid() {
+async fn subscribe_returns_400_if_form_invalid() {
     // Arrange
     let server = spawn_server().await;
     let client = reqwest::Client::new();

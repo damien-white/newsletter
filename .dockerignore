@@ -1,0 +1,12 @@
+.env*
+.spec/
+
+benches/
+target/
+tests/
+
+migrations/
+scripts/
+
+.idea/
+.vscode/
