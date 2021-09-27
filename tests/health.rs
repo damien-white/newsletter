@@ -1,11 +1,27 @@
 /// Integration tests for the `/health` endpoint
 use std::net::TcpListener;
 
+use once_cell::sync::Lazy;
 use sqlx::{migrate, query, Connection, Executor, PgConnection, PgPool};
 use uuid::Uuid;
 
 use newsletter::app::start;
 use newsletter::settings::{DatabaseSettings, Settings};
+use newsletter::telemetry::{init_subscriber, register_subscriber};
+
+// Initialize the `tracing` stack once via `once_cell`
+static TRACING: Lazy<()> = Lazy::new(|| {
+    let subscriber_name = "test";
+    let filter_level = "info";
+    // FIXME: Cleanup code; consider replacing `tracing` / `telemetry` layer
+    if std::env::var("TEST_LOG").is_ok() {
+        let subscriber = register_subscriber(subscriber_name, filter_level, std::io::stdout);
+        init_subscriber(subscriber);
+    } else {
+        let subscriber = register_subscriber(subscriber_name, filter_level, std::io::sink);
+        init_subscriber(subscriber);
+    }
+});
 
 pub struct TestServer {
     pub address: String,
@@ -14,11 +30,10 @@ pub struct TestServer {
 
 /// Spawn a new task instance of the server on a random port and run it in the background
 async fn spawn_server() -> TestServer {
-    let listener = TcpListener::bind("127.0.0.1:0").expect("Server failed to bind to random port");
+    Lazy::force(&TRACING);
 
-    // Get the port that the spawned server is bound to
+    let listener = TcpListener::bind("127.0.0.1:0").expect("Server failed to bind to random port");
     let port = listener.local_addr().unwrap().port();
-    // Return the application address
     let address = format!("http://127.0.0.1:{}", port);
 
     let mut settings = Settings::load().expect("Failed to load configuration settings.");
@@ -26,7 +41,7 @@ async fn spawn_server() -> TestServer {
     let pool = setup_test_db(&settings.database).await;
 
     let server = start(listener, pool.clone()).expect("Server address binding failed");
-    let _ = tokio::spawn(server);
+    tokio::spawn(server);
 
     TestServer { address, pool }
 }
@@ -90,7 +105,7 @@ async fn subscribe_returns_success_if_form_valid() {
         .expect("HTTP client request failed");
 
     // Assert
-    assert_eq!(response.status().as_u16(), 200);
+    assert_eq!(response.status().as_u16(), 201);
 
     let saved = query!("SELECT email, name FROM subscriptions")
         .fetch_one(&pool)

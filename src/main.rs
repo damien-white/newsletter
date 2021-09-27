@@ -11,13 +11,13 @@ use sqlx::PgPool;
 use newsletter::{
     app::start,
     settings::Settings,
-    telemetry::{init_tracing, register_subscriber},
+    telemetry::{init_subscriber, register_subscriber},
 };
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let subscriber = register_subscriber("newsletter", "info");
-    init_tracing(subscriber);
+    let subscriber = register_subscriber("newsletter", "info", std::io::stdout);
+    init_subscriber(subscriber);
 
     // Load settings from configuration source(s). Panic on failure.
     let settings = Settings::load().expect("Failed to load configuration settings.");

@@ -2,7 +2,7 @@
 set dotenv-load := true
 
 # Launch database instance inside a Docker container
-db-up:
+db-start:
     sh ./scripts/init_db.sh
 
 # Run migrations against the current PostgreSQL instance
@@ -10,7 +10,7 @@ db-migrate $SKIP_DOCKER="true":
     sh ./scripts/init_db.sh
 
 # Stop running database instance and remove its container
-db-down:
+db-stop:
     docker stop newsletter-postgres
 
 # Run server in watch mode

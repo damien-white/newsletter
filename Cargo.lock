@@ -1119,11 +1119,13 @@ dependencies = [
  "actix-web",
  "chrono",
  "config",
+ "once_cell",
  "reqwest",
  "serde",
  "sqlx",
  "tokio",
  "tracing",
+ "tracing-actix-web",
  "tracing-bunyan-formatter",
  "tracing-futures",
  "tracing-log",
@@ -2135,6 +2137,18 @@ dependencies = [
  "pin-project-lite",
  "tracing-attributes",
  "tracing-core",
+]
+
+[[package]]
+name = "tracing-actix-web"
+version = "0.4.0-beta.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "64be7b20ed6dfa15ddd89a964f28724360f9769eee60712666f20924d9a82c35"
+dependencies = [
+ "actix-web",
+ "tracing",
+ "tracing-futures",
+ "uuid",
 ]
 
 [[package]]
