@@ -1,5 +1,7 @@
 /// Integration tests for the `/health` endpoint
 use std::net::TcpListener;
+use std::thread;
+use std::time::Duration;
 
 use once_cell::sync::Lazy;
 use sqlx::{migrate, query, Connection, Executor, PgConnection, PgPool};
@@ -13,7 +15,6 @@ use newsletter::telemetry::{init_subscriber, register_subscriber};
 static TRACING: Lazy<()> = Lazy::new(|| {
     let subscriber_name = "test";
     let filter_level = "info";
-    // FIXME: Cleanup code; consider replacing `tracing` / `telemetry` layer
     if std::env::var("TEST_LOG").is_ok() {
         let subscriber = register_subscriber(subscriber_name, filter_level, std::io::stdout);
         init_subscriber(subscriber);
@@ -32,6 +33,12 @@ pub struct TestServer {
 async fn spawn_server() -> TestServer {
     Lazy::force(&TRACING);
 
+    let mut delay = 1;
+    while let Err(err) = TcpListener::bind("127.0.0.1:0") {
+        println!("Failed to bind to random port: {}\nRetrying...", err);
+        thread::sleep(Duration::from_secs(delay));
+        delay += 1;
+    }
     let listener = TcpListener::bind("127.0.0.1:0").expect("Server failed to bind to random port");
     let port = listener.local_addr().unwrap().port();
     let address = format!("http://127.0.0.1:{}", port);

@@ -1,4 +1,6 @@
 //! Manages the configuration for the service.
+use std::convert::{TryFrom, TryInto};
+
 use config::{Config, ConfigError};
 use serde::Deserialize;
 
@@ -42,16 +44,53 @@ pub struct Settings {
 }
 
 impl Settings {
+    /// Load the application settings from configuration sources
     pub fn load() -> Result<Settings, ConfigError> {
-        // initialize config reader
         let mut settings = Config::default();
+        let base_path = std::env::current_dir().expect("Failed to find current working directory.");
+        let config_dir = base_path.join("config");
 
-        // Add config values from file in config directory named `default`.
-        // It will search for any top-level file with an extension
-        // that `config` knows how to parse: *.{json, toml, yaml} etc.
-        settings.merge(config::File::with_name("config/default"))?;
+        settings.merge(config::File::from(config_dir.join("default")).required(true))?;
 
-        // Try to convert config values read into our `Settings` type
+        let environment: RuntimeEnv = std::env::var("APP_ENV")
+            .unwrap_or_else(|_| "development".into())
+            .try_into()
+            .expect("APP_ENV is not set or could not be parsed.");
+
+        settings.merge(config::File::from(config_dir.join(environment.as_str())).required(true))?;
+
+        // Add settings from environment variables with a prefix of 'APP__'
+        // Example: `APP_APPLICATION__PORT=8120` would set `Settings.app.port`
+        settings.merge(config::Environment::with_prefix("app").separator("__"))?;
         settings.try_into()
+    }
+}
+
+/// Runtime environment types for the application.
+pub enum RuntimeEnv {
+    Development,
+    Production,
+}
+
+impl RuntimeEnv {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            RuntimeEnv::Development => "development",
+            RuntimeEnv::Production => "production",
+        }
+    }
+}
+
+impl TryFrom<String> for RuntimeEnv {
+    type Error = String;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value.to_lowercase().as_str() {
+            "development" => Ok(Self::Development),
+            "production" => Ok(Self::Production),
+            _ => Err(
+                "Environment type not supported. Please use 'development' or 'production'.".into(),
+            ),
+        }
     }
 }

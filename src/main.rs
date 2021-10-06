@@ -22,11 +22,10 @@ async fn main() -> std::io::Result<()> {
     // Load settings from configuration source(s). Panic on failure.
     let settings = Settings::load().expect("Failed to load configuration settings.");
 
-    let pool = PgPool::connect(&settings.database.url())
-        .await
-        .expect("Failed to connect to PostgreSQL");
-    let addr = &format!("127.0.0.1:{}", &settings.app.port);
-    let listener = TcpListener::bind(addr)?;
+    let pool =
+        PgPool::connect_lazy(&settings.database.url()).expect("Failed to connect to PostgreSQL");
+    let address = &format!("{}:{}", settings.app.host, settings.app.port);
+    let listener = TcpListener::bind(address)?;
 
     start(listener, pool)?.await
 }

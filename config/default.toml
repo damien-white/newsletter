@@ -1,6 +1,6 @@
 [app]
-host = "127.0.0.1"
 port = 8120
+
 [database]
 username = "postgres"
 password = "password"

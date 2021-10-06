@@ -1,7 +1,7 @@
 # Load environment variables
 set dotenv-load := true
 
-# Launch database instance inside a Docker container
+# Launch database instance inside Docker container
 db-start:
     sh ./scripts/init_db.sh
 
@@ -9,17 +9,17 @@ db-start:
 db-migrate $SKIP_DOCKER="true":
     sh ./scripts/init_db.sh
 
-# Stop running database instance and remove its container
+# Stop database instance and remove Docker container
 db-stop:
     docker stop newsletter-postgres
 
-# Run server in watch mode
-run-watch:
-    cargo watch -x run
+# Launch server instance inside Docker container
+server-start:
+    docker run --rm --name newsletter-server -p "8120:8120" -d newsletter
 
-# Run tests in watch mode
-test-watch:
-    cargo watch -x test
+# Stop server instance and remove Docker container
+server-stop:
+    docker stop newsletter-server
 
 # Checks for inconsistencies, warnings and errors in the codebase
 check:
