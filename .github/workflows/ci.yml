@@ -75,6 +75,8 @@ jobs:
       - name: Validate SQLx offline metadata
         run: |
           cargo sqlx prepare --check -- --bin newsletter
+        env:
+          DATABASE_URL: postgres://postgres:password@localhost:5432/postgres
 
       - name: Run cargo test
         uses: actions-rs/cargo@v1
