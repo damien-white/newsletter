@@ -72,10 +72,9 @@ jobs:
           sudo apt-get install libpq-dev -y
           SKIP_DOCKER=true ./scripts/init_db.sh
 
-      # Note: Validating offline cache with `cargo sqlx prepare` is not a valid
-      # option at the moment. It causes the build to fail which does not let
-      # tests run. This step will be reintroduced when the feature is stable.
-      # Reference: https://github.com/launchbadge/sqlx/pull/1183
+      - name: Validate SQLx offline metadata
+        run: |
+          cargo sqlx prepare --check -- --lib
 
       - name: Run cargo test
         uses: actions-rs/cargo@v1
