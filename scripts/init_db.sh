@@ -1,39 +1,51 @@
 #!/usr/bin/env bash
 
-set -eo pipefail
+set -eox pipefail
 
-if ! [ -x "$(command -v psql)" ]; then
-  echo >&2 "[-] Error: 'psql' must be installed."
-  exit 1
-fi
+# Verify that the system has the required bins installed before proceeding
+function check_deps() {
+  local required_deps=(psql sqlx)
+  for item in "${required_deps[@]}"; do
+    echo "${item}"
+    if ! [ -x "$(command -v ${item})" ]; then
+      echo >&2 "[ERR]: ${item} is either missing or lacks executable permissions."
+      exit 1
+    fi
+  done
+}
 
-if ! [ -x "$(command -v sqlx)" ]; then
-  echo >&2 "[-] Error: 'sqlx-cli' must be installed. To install with cargo, use:"
-  echo >&2 "    cargo install sqlx-cli --no-default-features --features postgres"
-  exit 1
-fi
+check_deps
+
+# Create a new environment variable file and use direnv to set values
+function load_from_env() {
+  local envfile="./.env"
+  set -a && . $envfile
+}
+
+load_from_env
 
 # Set environment variables to be used to initialize database
-DB_USER="${POSTGRES_USER:=postgres}"
-DB_PASSWORD="${POSTGRES_PASSWORD:=password}"
-DB_PORT="${POSTGRES_PORT:=5432}"
-DB_NAME="${POSTGRES_DB:=postgres}"
-DB_MAX_CONNECTIONS="${POSTGRES_CONCURRENCY:=1000}"
+POSTGRES_USER="${POSTGRES_USER:=postgres}"
+POSTGRES_PASSWORD="${POSTGRES_PASSWORD:=password}"
+POSTGRES_HOST="${POSTGRES_HOST:=localhost}"
+POSTGRES_PORT="${POSTGRES_PORT:=5432}"
+POSTGRES_DB="${POSTGRES_DB:=newsletter}"
+POSTGRES_CONCURRENCY="${POSTGRES_CONCURRENCY:=1000}"
 
 # Start PostgreSQL database with Docker unless 'SKIP_DOCKER' flag is set
 if [[ -z "${SKIP_DOCKER}" ]]; then
   docker run --rm \
     --name newsletter-postgres \
-    -e POSTGRES_USER=${DB_USER} \
-    -e POSTGRES_PASSWORD=${DB_PASSWORD} \
-    -e POSTGRES_DB=${DB_NAME} \
-    -p "${DB_PORT}:5432" \
-    -d postgres:14 \
-    postgres -N ${DB_MAX_CONNECTIONS}
+    -e POSTGRES_USER=${POSTGRES_USER} \
+    -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \
+    -e POSTGRES_DB=${POSTGRES_DB} \
+    -p "${POSTGRES_PORT}:5432" \
+    -d postgres:14.0 \
+    postgres -N ${POSTGRES_CONCURRENCY}
 fi
 
 # 'DATABASE_URL' must be set for SQLx to work properly, so we explicitly set it
-export DATABASE_URL="postgres://${DB_USER}:${DB_PASSWORD}@localhost:${DB_PORT}/${DB_NAME}"
+export DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
 
 # Helper function that waits until PostgreSQL is up and ready to accept commands
 function wait_for_postgres() {
@@ -46,7 +58,7 @@ function wait_for_postgres() {
   until psql "${DATABASE_URL}" --command '\q'; do
     ((attempt_count = attempt_count + 1))
     ((delay = delay + 1))
-    echo >&2 "[»] Cannot reach PostgreSQL service. Retrying in ${delay} seconds..."
+    echo >&2 "[WARN] Cannot reach PostgreSQL service. Retrying in ${delay} seconds..."
     sleep $delay
   done
 }
@@ -54,9 +66,9 @@ function wait_for_postgres() {
 # Run `wait_for_postgres` function
 wait_for_postgres
 
-echo >&2 "[*] PostgreSQL service started successfully. Executing migrations..."
+echo >&2 "PostgreSQL service started successfully. Executing migrations..."
 # Create database and run any pending migrations with `sqlx-cli`
 sqlx database create
 sqlx migrate run
 
-echo >&2 "[*] Database migrations complete."
+echo >&2 "Database migrations complete."

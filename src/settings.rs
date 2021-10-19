@@ -4,19 +4,19 @@ use std::convert::{TryFrom, TryInto};
 use config::{Config, ConfigError};
 use serde::Deserialize;
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct AppSettings {
     pub host: String,
     pub port: u16,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct DatabaseSettings {
     pub username: String,
     pub password: String,
     pub host: String,
     pub port: u16,
-    pub dbname: String,
+    pub name: String,
 }
 
 impl DatabaseSettings {
@@ -25,7 +25,7 @@ impl DatabaseSettings {
     pub fn url(&self) -> String {
         format!(
             "postgres://{}:{}@{}:{}/{}",
-            self.username, self.password, self.host, self.port, self.dbname
+            self.username, self.password, self.host, self.port, self.name
         )
     }
 
@@ -37,7 +37,7 @@ impl DatabaseSettings {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Settings {
     pub app: AppSettings,
     pub database: DatabaseSettings,
@@ -53,7 +53,7 @@ impl Settings {
         settings.merge(config::File::from(config_dir.join("default")).required(true))?;
 
         let environment: RuntimeEnv = std::env::var("APP_ENV")
-            .unwrap_or_else(|_| "development".into())
+            .unwrap_or_else(|_| "local".into())
             .try_into()
             .expect("APP_ENV is not set or could not be parsed.");
 
@@ -61,21 +61,22 @@ impl Settings {
 
         // Add settings from environment variables with a prefix of 'APP__'
         // Example: `APP_APPLICATION__PORT=8120` would set `Settings.app.port`
-        settings.merge(config::Environment::with_prefix("app").separator("__"))?;
+        settings.merge(config::Environment::new().separator("_"))?;
+        // settings.merge(config::Environment::with_prefix("app").separator("_"))?;
         settings.try_into()
     }
 }
 
 /// Runtime environment types for the application.
 pub enum RuntimeEnv {
-    Development,
+    Local,
     Production,
 }
 
 impl RuntimeEnv {
     pub fn as_str(&self) -> &'static str {
         match self {
-            RuntimeEnv::Development => "development",
+            RuntimeEnv::Local => "local",
             RuntimeEnv::Production => "production",
         }
     }
@@ -86,11 +87,9 @@ impl TryFrom<String> for RuntimeEnv {
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         match value.to_lowercase().as_str() {
-            "development" => Ok(Self::Development),
+            "local" => Ok(Self::Local),
             "production" => Ok(Self::Production),
-            _ => Err(
-                "Environment type not supported. Please use 'development' or 'production'.".into(),
-            ),
+            _ => Err("Environment type not supported. Please use 'local' or 'production'.".into()),
         }
     }
 }

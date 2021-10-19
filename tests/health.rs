@@ -1,7 +1,5 @@
 /// Integration tests for the `/health` endpoint
 use std::net::TcpListener;
-use std::thread;
-use std::time::Duration;
 
 use once_cell::sync::Lazy;
 use sqlx::{migrate, query, Connection, Executor, PgConnection, PgPool};
@@ -33,18 +31,12 @@ pub struct TestServer {
 async fn spawn_server() -> TestServer {
     Lazy::force(&TRACING);
 
-    let mut delay = 1;
-    while let Err(err) = TcpListener::bind("127.0.0.1:0") {
-        println!("Failed to bind to random port: {}\nRetrying...", err);
-        thread::sleep(Duration::from_secs(delay));
-        delay += 1;
-    }
     let listener = TcpListener::bind("127.0.0.1:0").expect("Server failed to bind to random port");
     let port = listener.local_addr().unwrap().port();
     let address = format!("http://127.0.0.1:{}", port);
 
     let mut settings = Settings::load().expect("Failed to load configuration settings.");
-    settings.database.dbname = Uuid::new_v4().to_string();
+    settings.database.name = Uuid::new_v4().to_string();
     let pool = setup_test_db(&settings.database).await;
 
     let server = start(listener, pool.clone()).expect("Server address binding failed");
@@ -59,7 +51,7 @@ pub async fn setup_test_db(database: &DatabaseSettings) -> PgPool {
         .expect("Failed to connect to PostgreSQL.");
 
     connection
-        .execute(format!("CREATE DATABASE \"{}\";", database.dbname).as_str())
+        .execute(format!("CREATE DATABASE \"{}\";", database.name).as_str())
         .await
         .expect("Failed to create database instance.");
 
