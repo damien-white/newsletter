@@ -44,9 +44,6 @@ if [[ -z "${SKIP_DOCKER}" ]]; then
     postgres -N ${POSTGRES_CONCURRENCY}
 fi
 
-# 'DATABASE_URL' must be set for SQLx to work properly, so we explicitly set it
-export DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
-
 # Helper function that waits until PostgreSQL is up and ready to accept commands
 function wait_for_postgres() {
   # Number of connection attempts made
@@ -55,7 +52,7 @@ function wait_for_postgres() {
   local delay=1
 
   # Ping PostgreSQL service until it is ready to accept commands
-  until psql "${DATABASE_URL}" --command '\q'; do
+  until PGPASSWORD="${POSTGRES_PASSWORD}" psql -h "${POSTGRES_HOST}" -U "${POSTGRES_USER}" -p "${POSTGRES_PORT}" -d "postgres" -c '\q'; do
     ((attempt_count = attempt_count + 1))
     ((delay = delay + 1))
     echo >&2 "[WARN] Cannot reach PostgreSQL service. Retrying in ${delay} seconds..."
@@ -63,10 +60,12 @@ function wait_for_postgres() {
   done
 }
 
-# Run `wait_for_postgres` function
 wait_for_postgres
 
 echo >&2 "PostgreSQL service started successfully. Executing migrations..."
+
+# 'DATABASE_URL' must be set for SQLx to work properly, so we explicitly set it
+export DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
 # Create database and run any pending migrations with `sqlx-cli`
 sqlx database create
 sqlx migrate run
